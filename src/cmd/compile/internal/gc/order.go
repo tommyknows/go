@@ -1179,6 +1179,14 @@ func (o *Order) expr(n, lhs *Node) *Node {
 			n = o.copyExpr(n, n.Type, false)
 		}
 
+	case OPREPEND:
+		n.Left = o.expr(n.Left, nil)
+		n.Right = o.expr(n.Right, nil)
+
+		if lhs == nil || lhs.Op != ONAME && !samesafeexpr(lhs, n.Left) {
+			n = o.copyExpr(n, n.Type, false)
+		}
+
 	case OSLICE, OSLICEARR, OSLICESTR, OSLICE3, OSLICE3ARR:
 		n.Left = o.expr(n.Left, nil)
 		low, high, max := n.SliceBounds()

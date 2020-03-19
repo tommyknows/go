@@ -154,6 +154,7 @@ var goopnames = []string{
 	OANDNOT:   "&^",
 	OAND:      "&",
 	OAPPEND:   "append",
+	OPREPEND:  "prepend",
 	OAS:       "=",
 	OAS2:      "=",
 	OBREAK:    "break",
@@ -1148,6 +1149,7 @@ func (n *Node) stmtfmt(s fmt.State, mode fmtMode) {
 var opprec = []int{
 	OALIGNOF:     8,
 	OAPPEND:      8,
+	OPREPEND:     8,
 	OBYTES2STR:   8,
 	OARRAYLIT:    8,
 	OSLICELIT:    8,
@@ -1506,6 +1508,7 @@ func (n *Node) exprfmt(s fmt.State, prec int, mode fmtMode) {
 	case OREAL,
 		OIMAG,
 		OAPPEND,
+		OPREPEND,
 		OCAP,
 		OCLOSE,
 		ODELETE,

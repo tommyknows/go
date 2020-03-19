@@ -41,6 +41,7 @@ var (
 
 var (
 	Debug_append       int
+	Debug_prepend      int
 	Debug_checkptr     int
 	Debug_closure      int
 	Debug_compilelater int
@@ -69,6 +70,7 @@ var debugtab = []struct {
 	val  interface{} // must be *int or *string
 }{
 	{"append", "print information about append compilation", &Debug_append},
+	{"prepend", "print information about prepend complitaion", &Debug_prepend},
 	{"checkptr", "instrument unsafe pointer conversions", &Debug_checkptr},
 	{"closure", "print information about closure compilation", &Debug_closure},
 	{"compilelater", "compile functions as late as possible", &Debug_compilelater},

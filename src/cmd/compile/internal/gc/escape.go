@@ -501,7 +501,7 @@ func (e *Escape) exprSkipInit(k EscHole, n *Node) {
 	case ORECV:
 		e.discard(n.Left)
 
-	case OCALLMETH, OCALLFUNC, OCALLINTER, OLEN, OCAP, OCOMPLEX, OREAL, OIMAG, OAPPEND, OCOPY:
+	case OCALLMETH, OCALLFUNC, OCALLINTER, OLEN, OCAP, OCOMPLEX, OREAL, OIMAG, OAPPEND, OPREPEND, OCOPY:
 		e.call([]EscHole{k}, n, nil)
 
 	case ONEW:
@@ -740,7 +740,7 @@ func (e *Escape) call(ks []EscHole, call, where *Node) {
 		// ok
 	case OLEN, OCAP, OREAL, OIMAG, OCLOSE, OPANIC:
 		args = []*Node{call.Left}
-	case OCOMPLEX, OCOPY:
+	case OCOMPLEX, OCOPY, OPREPEND:
 		args = []*Node{call.Left, call.Right}
 	default:
 		Fatalf("unexpected call op: %v", call.Op)
@@ -809,6 +809,14 @@ func (e *Escape) call(ks []EscHole, call, where *Node) {
 				for i := 1; i < len(args); i++ {
 					paramKs[i] = e.heapHole()
 				}
+			}
+
+		case OPREPEND:
+			// imitate the behaviour from OAPPEND
+			paramKs[0] = e.heapHole()
+
+			if types.Haspointers(call.Right.Type.Elem()) {
+				paramKs[1] = e.teeHole(paramKs[1], e.heapHole().deref(call, "prepended slice"))
 			}
 
 		case OCOPY:

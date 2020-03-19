@@ -1576,6 +1576,41 @@ func typecheck1(n *Node, top int) (res *Node) {
 			checkwidth(as[i].Type) // ensure width is calculated for backend
 		}
 
+	case OPREPEND:
+		ok |= ctxExpr
+		typecheckargs(n)
+		if !twoarg(n) {
+			n.Type = nil
+			return n
+		}
+
+		t := n.Right.Type
+		if t == nil {
+			n.Type = nil
+			return n
+		}
+
+		n.Type = t
+		if !t.IsSlice() {
+			if Isconst(n.Right, CTNIL) {
+				yyerror("second argument to prepend must be typed slice; have untyped nil")
+				n.Type = nil
+				return n
+			}
+
+			yyerror("second argument to prepend must be slice; have %L", t)
+			n.Type = nil
+			return n
+		}
+
+		if n.Left.Type == nil {
+			yyerror("first Argument has no type")
+			n.Type = nil
+			return n
+		}
+		n.Left = assignconv(n.Left, t.Elem(), "prepend")
+		checkwidth(n.Left.Type)
+
 	case OCOPY:
 		ok |= ctxStmt | ctxExpr
 		typecheckargs(n)
@@ -2184,6 +2219,7 @@ func checkdefergo(n *Node) {
 		return
 
 	case OAPPEND,
+		OPREPEND,
 		OCAP,
 		OCOMPLEX,
 		OIMAG,

@@ -685,6 +685,13 @@ opswitch:
 			}
 			// Otherwise, lowered for race detector.
 			// Treat as ordinary assignment.
+		case OPREPEND:
+			// x = prepend(...)
+			r := n.Right
+			if r.Type.Elem().NotInHeap() {
+				yyerror("%v is go:notinheap; heap allocation disallowed", r.Type.Elem())
+			}
+			n.Right = walkprepend(r, init)
 		}
 
 		if n.Left != nil && n.Right != nil {
@@ -1187,6 +1194,9 @@ opswitch:
 	case OAPPEND:
 		// order should make sure we only see OAS(node, OAPPEND), which we handle above.
 		Fatalf("append outside assignment")
+	case OPREPEND:
+		// order should make sure we only see OAS(node, OPREPEND), which we handle above.
+		Fatalf("prepend outside assignment")
 
 	case OCOPY:
 		n = copyany(n, init, instrumenting && !compiling_runtime)
@@ -2966,6 +2976,44 @@ func walkappend(n *Node, init *Nodes, dst *Node) *Node {
 	walkstmtlist(l)
 	init.Append(l...)
 	return ns
+}
+
+// walkprepend rewrites the builtin prepend(x, dst) to
+//
+//   s := make([]<T>, 1, len(dst)+1)
+//   s[0] = x
+//   append(s, dst...)
+//
+func walkprepend(n *Node, init *Nodes) *Node {
+	tail := temp(n.Right.Type)
+
+	var l []*Node
+	l = append(l, nod(OAS, tail, n.Right))
+
+	// length is always one, the element that is prepended
+	makeLen := nodintconst(1)                                  // len = 1
+	makeCap := nod(OADD, nodintconst(1), nod(OLEN, tail, nil)) // cap = len(tail) + 1
+	// get the type of the tail
+	makeType := nod(OTYPE, nil, nil)
+	makeType.Type = tail.Type
+
+	makeDest := nod(OMAKE, nil, nil)
+	makeDest.List = asNodes([]*Node{makeType, makeLen, makeCap}) // make([]<T>, 1, len(tail) + 1)
+
+	// create the destination slice
+	ndst := temp(tail.Type)
+
+	l = append(l, nod(OAS, ndst, makeDest))                            // ndst = make([]T, 1, len(tail)+ 1)
+	l = append(l, nod(OAS, nod(OINDEX, ndst, nodintconst(0)), n.Left)) // ndst[0] = x
+
+	// type check and walk everything
+	typecheckslice(l, ctxStmt)
+	walkstmtlist(l)
+	init.Append(l...)
+
+	a := nod(OAPPEND, nil, nil)
+	a.List = asNodes([]*Node{ndst, tail})
+	return appendslice(a, init) // append(ndst, tail)
 }
 
 // Lower copy(a, b) to a memmove call or a runtime call.

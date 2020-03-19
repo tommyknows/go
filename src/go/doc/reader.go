@@ -893,6 +893,7 @@ var predeclaredTypes = map[string]bool{
 
 var predeclaredFuncs = map[string]bool{
 	"append":  true,
+	"prepend": true,
 	"cap":     true,
 	"close":   true,
 	"complex": true,
