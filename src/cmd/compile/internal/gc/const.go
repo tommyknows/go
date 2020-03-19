@@ -1251,6 +1251,7 @@ func hascallchan(n *Node) bool {
 	}
 	switch n.Op {
 	case OAPPEND,
+		OPREPEND,
 		OCALL,
 		OCALLFUNC,
 		OCALLINTER,

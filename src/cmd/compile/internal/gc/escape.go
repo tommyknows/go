@@ -501,7 +501,7 @@ func (e *Escape) exprSkipInit(k EscHole, n *Node) {
 	case ORECV:
 		e.discard(n.Left)
 
-	case OCALLMETH, OCALLFUNC, OCALLINTER, OLEN, OCAP, OCOMPLEX, OREAL, OIMAG, OAPPEND, OCOPY:
+	case OCALLMETH, OCALLFUNC, OCALLINTER, OLEN, OCAP, OCOMPLEX, OREAL, OIMAG, OAPPEND, OPREPEND, OCOPY:
 		e.call([]EscHole{k}, n, nil)
 
 	case ONEW:
@@ -736,7 +736,7 @@ func (e *Escape) call(ks []EscHole, call, where *Node) {
 	case OCALLINTER:
 		fntype = call.Left.Type
 		recv = call.Left.Left
-	case OAPPEND, ODELETE, OPRINT, OPRINTN, ORECOVER:
+	case OAPPEND, OPREPEND, ODELETE, OPRINT, OPRINTN, ORECOVER:
 		// ok
 	case OLEN, OCAP, OREAL, OIMAG, OCLOSE, OPANIC:
 		args = []*Node{call.Left}
@@ -809,6 +809,15 @@ func (e *Escape) call(ks []EscHole, call, where *Node) {
 				for i := 1; i < len(args); i++ {
 					paramKs[i] = e.heapHole()
 				}
+			}
+
+			// I don't know what I'm doing
+		case OPREPEND:
+			// the given element always needs to go on the heap
+			paramKs[0] = e.heapHole()
+			// the slice, second argument...
+			if types.Haspointers(args[1].Type.Elem()) {
+				paramKs[1] = e.teeHole(paramKs[1], e.heapHole().deref(call, "appended slice"))
 			}
 
 		case OCOPY:

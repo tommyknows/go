@@ -615,6 +615,13 @@ opswitch:
 		if mapAppend && !samesafeexpr(n.Left, n.Right.List.First()) {
 			Fatalf("not same expressions: %v != %v", n.Left, n.Right.List.First())
 		}
+		// TODO(tommyknows): use this?
+		//// Recognize m[k] = prepend(<T>, m[k])  so we can reuse
+		//// the mapassign call
+		//mapPrepend := n.Left.Op == OINDEXMAP && n.Right.Op == OPREPEND
+		//if mapPrepend && !samesafeexpr(n.Left, n.Right.List.Second()) {
+		//Fatalf("not same expressions: %v != %v", n.Left, n.Right.List.Second())
+		//}
 
 		n.Left = walkexpr(n.Left, init)
 		n.Left = safeexpr(n.Left, init)
@@ -683,6 +690,26 @@ opswitch:
 				r.Left = typename(r.Type.Elem())
 				break opswitch
 			}
+			// Otherwise, lowered for race detector.
+			// Treat as ordinary assignment.
+		case OPREPEND:
+			// x = prepend(...)
+			r := n.Right
+			if r.Type.Elem().NotInHeap() {
+				yyerror("%v is go:notinheap; heap allocation disallowed", r.Type.Elem())
+			}
+			r = walkprepend(r, init)
+			n.Right = r
+			// we just rewrote the ast, traverse it again
+			break opswitch
+			//n.Right = r
+			//if r.Op == OPREPEND {
+			//// Left in place for back end.
+			//// Do not add a new write barrier.
+			//// Set up address of type for back end.
+			//r.Left = typename(r.Type.Elem())
+			//break opswitch
+			//}
 			// Otherwise, lowered for race detector.
 			// Treat as ordinary assignment.
 		}
@@ -2966,6 +2993,44 @@ func walkappend(n *Node, init *Nodes, dst *Node) *Node {
 	walkstmtlist(l)
 	init.Append(l...)
 	return ns
+}
+
+// walkprepend rewrites the builtin prepend(x, dst) to
+//
+//   s := make([]<T>, 1, len(dst)+1)
+//   s[0] = x
+//   append(s, dst...)
+//
+func walkprepend(n *Node, init *Nodes) *Node {
+	// TODO(tommyknows): I think this is just an optimisation
+	//if !samesafeexpr(dst, n.List.First()) {
+	//n.List.SetFirst(safeexpr(n.List.First(), init))
+	//n.List.SetFirst(walkexpr(n.List.First(), init))
+	//}
+	//walkexprlistsafe(n.List.Slice()[1:], init)
+
+	ndst := n.List.Second()
+
+	var l []*Node
+	mkLen := nodintconst(1)
+	mkCap := nod(OADD, nodintconst(1), // cap = len(dest) + 1
+		nod(OLEN, ndst, nil))
+	mk := nod(OMAKESLICE, mkLen, mkCap)
+	mk.Type = ndst.Type
+
+	destSlice := temp(ndst.Type)
+	//destSlice := nod(OAS
+	l = append(l, nod(OAS, destSlice, mk)) // dest = make([]T, 1, len(src)+ 1)
+	l = append(l, nod(OAS,
+		nod(OINDEX, destSlice, nodintconst(0)),
+		n.List.Second())) // dest[0] = x
+
+	// append(s, dst...)
+	//l = append(l, nod(OAS, nod(OINDEX())
+	typecheckslice(l, ctxStmt)
+	walkstmtlist(l)
+	init.Append(l...)
+	return appendslice(n, init)
 }
 
 // Lower copy(a, b) to a memmove call or a runtime call.

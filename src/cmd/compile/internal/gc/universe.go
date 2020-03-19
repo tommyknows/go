@@ -47,6 +47,7 @@ var builtinFuncs = [...]struct {
 	op   Op
 }{
 	{"append", OAPPEND},
+	{"prepend", OPREPEND},
 	{"cap", OCAP},
 	{"close", OCLOSE},
 	{"complex", OCOMPLEX},

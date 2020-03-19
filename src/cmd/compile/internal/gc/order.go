@@ -471,6 +471,7 @@ func (o *Order) mapAssign(n *Node) {
 		if n.Left.Op == OINDEXMAP {
 			// Make sure we evaluate the RHS before starting the map insert.
 			// We need to make sure the RHS won't panic.  See issue 22881.
+			// TODO(tommyknows): check if we need to do this for OPREPEND too.
 			if n.Right.Op == OAPPEND {
 				s := n.Right.List.Slice()[1:]
 				for i, n := range s {
@@ -1174,6 +1175,14 @@ func (o *Order) expr(n, lhs *Node) *Node {
 		} else {
 			o.exprList(n.List)
 		}
+
+		if lhs == nil || lhs.Op != ONAME && !samesafeexpr(lhs, n.List.First()) {
+			n = o.copyExpr(n, n.Type, false)
+		}
+
+	case OPREPEND:
+		// this is just a rough guess
+		o.exprList(n.List)
 
 		if lhs == nil || lhs.Op != ONAME && !samesafeexpr(lhs, n.List.First()) {
 			n = o.copyExpr(n, n.Type, false)
