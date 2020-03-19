@@ -133,6 +133,13 @@ type ComplexType complex64
 //	slice = append([]byte("hello "), "world"...)
 func append(slice []Type, elems ...Type) []Type
 
+// The prepend built-in function prepends an element to the start of the slice.
+// As slices do not have any capacity in the beginning, this function always
+// results in an expensive copy of the original slice. Prepend returns the
+// updated slice. It is therefore necessary to store the result of prepend,
+// often in the variable holding the slice itself.
+func prepend(elem Type, slice []Type) []Type
+
 // The copy built-in function copies elements from a source slice into a
 // destination slice. (As a special case, it also will copy bytes from a
 // string to a slice of bytes.) The source and destination may overlap. Copy

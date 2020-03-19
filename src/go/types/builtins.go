@@ -72,7 +72,6 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 			return
 		}
 	}
-
 	switch id {
 	case _Append:
 		// append(s S, x ...T) S, where T is the element type of S
@@ -121,6 +120,46 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 			// only evaluate arguments that have not been evaluated before
 			if i < len(alist) {
 				*x = alist[i]
+				return
+			}
+			arg(x, i)
+		}, nargs)
+		// ok to continue even if check.arguments reported errors
+
+		x.mode = value
+		x.typ = S
+		if check.Types != nil {
+			check.recordBuiltinType(call.Fun, sig)
+		}
+
+	case _Prepend:
+		// prepend(x T, s S) S, where T is the element type of S
+		// spec: prepend is like append, but adds to the beginning instead of the end of the slice.
+		// The values x are passed to a parameter of type T where T is the element type
+		// of S and the respective parameter passing rules apply."
+
+		// the second argument is the slice, so we start by getting that type.
+		arg(x, 1)
+		S := x.typ
+		var T Type
+		if s, _ := S.Underlying().(*Slice); s != nil {
+			T = s.elem
+		} else {
+			check.invalidArg(x.pos(), "%s is not a slice", x)
+			return
+		}
+
+		// save the already evaulated argument
+		arg1 := *x
+		// reset to the first argument
+		arg(x, 0)
+
+		// check general case by creating custom signature
+		sig := makeSig(S, T, S)
+		check.arguments(x, call, sig, func(x *operand, i int) {
+			// only evaluate arguments that have not been evaluated before
+			if i == 1 {
+				*x = arg1
 				return
 			}
 			arg(x, i)

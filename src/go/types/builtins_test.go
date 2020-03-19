@@ -25,6 +25,10 @@ var builtinCalls = []struct {
 	{"append", `type T []byte; var s T; var str string; _ = append(s, str...)`, `func(p.T, string...) p.T`},
 	{"append", `type T []byte; type U string; var s T; var str U; _ = append(s, str...)`, `func(p.T, p.U...) p.T`},
 
+	{"prepend", `var s []int; _ = prepend(0, s)`, `func(int, []int) []int`},
+	{"prepend", `type T int; var s []T; var n T; _ = prepend(n, s)`, `func(p.T, []p.T) []p.T`},
+	{"prepend", `var s []int; _ = (prepend)(0, s)`, `func(int, []int) []int`},
+
 	{"cap", `var s [10]int; _ = cap(s)`, `invalid type`},  // constant
 	{"cap", `var s [10]int; _ = cap(&s)`, `invalid type`}, // constant
 	{"cap", `var s []int64; _ = cap(s)`, `func([]int64) int`},
