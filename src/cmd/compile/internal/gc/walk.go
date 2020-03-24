@@ -692,6 +692,13 @@ opswitch:
 				yyerror("%v is go:notinheap; heap allocation disallowed", r.Type.Elem())
 			}
 			n.Right = walkprepend(r, init)
+		case OFMAP:
+			// x = map(...)
+			r := n.Right
+			if r.Type.Elem().NotInHeap() {
+				yyerror("%v is go:notinheap; heap allocation disallowed", r.Type.Elem())
+			}
+			n.Right = walkfmap(r, init)
 		}
 
 		if n.Left != nil && n.Right != nil {
@@ -1195,6 +1202,9 @@ opswitch:
 		// order should make sure we only see OAS(node, OAPPEND), which we handle above.
 		Fatalf("append outside assignment")
 	case OPREPEND:
+		// order should make sure we only see OAS(node, OPREPEND), which we handle above.
+		Fatalf("prepend outside assignment")
+	case OFMAP:
 		// order should make sure we only see OAS(node, OPREPEND), which we handle above.
 		Fatalf("prepend outside assignment")
 
@@ -3014,6 +3024,65 @@ func walkprepend(n *Node, init *Nodes) *Node {
 	a := nod(OAPPEND, nil, nil)
 	a.List = asNodes([]*Node{ndst, tail})
 	return appendslice(a, init) // append(ndst, tail)
+}
+
+// walkfmap rewrites the bulitin fmap(f(in) out, []src) to
+//
+//   init {
+//     dst = make([]out, len(src))
+//     for i, e := range src {
+//       dst[i] = f(e)
+//     }
+//   }
+//   dst
+//
+func walkfmap(n *Node, init *Nodes) *Node {
+	mapFunc := n.Left
+	source := n.Right
+	var l []*Node
+
+	makeLen := nod(OLEN, source, nil) // len = len(src)
+	makeType := nod(OTYPE, nil, nil)
+	makeDest := nod(OMAKE, nil, nil)
+	// get the result type of the mapping function
+	destType := types.NewSlice(
+		mapFunc.Type.Results().Fields().Index(0).Type,
+	)
+	makeType.Type = destType
+	makeDest.List.Append(makeType, makeLen) // make([]<T>, len(src))
+
+	// create the destination slice / map
+	ndst := temp(destType)
+
+	l = append(l, nod(OAS, ndst, makeDest)) // ndst = make([]<T>, len(src))
+
+	// for idx := range source {
+	//   ndst[idx] = fn(source[idx])
+	// }
+	ran := nod(ORANGE, nil, source)
+	ran.SetColas(true)
+	ni := temp(types.Types[TINT])
+	ni.Name.Defn = ran
+	ni.Type = types.Types[TINT]
+
+	ran.Ninit.Append(nod(ODCL, ni, nil))
+
+	ran.List.Set1(ni)
+	nx := nod(OINDEX, source, ni)
+	nx.SetBounded(true)
+
+	funCall := nod(OCALL, n.Left, nil)
+	funCall.List.Append(nx)
+
+	ran.Nbody.Append(nod(OAS, nod(OINDEX, ndst, ni), funCall))
+
+	l = append(l, ran)
+
+	typecheckslice(l, ctxStmt)
+	walkstmtlist(l)
+	init.Append(l...)
+
+	return ndst
 }
 
 // Lower copy(a, b) to a memmove call or a runtime call.

@@ -1611,6 +1611,102 @@ func typecheck1(n *Node, top int) (res *Node) {
 		n.Left = assignconv(n.Left, t.Elem(), "prepend")
 		checkwidth(n.Left.Type)
 
+	case OFMAP:
+		ok |= ctxExpr
+		typecheckargs(n)
+		if !twoarg(n) {
+			n.Type = nil
+			return n
+		}
+
+		t := n.Left.Type
+		if t == nil {
+			n.Type = nil
+			return n
+		}
+
+		if t.Etype != types.TFUNC {
+			yyerror("first argument to fmap must be function, have %L", t)
+			n.Type = nil
+			return n
+		}
+
+		if n.Right.Type == nil {
+			yyerror("second argument has no type")
+			n.Type = nil
+			return n
+		}
+
+		if t.NumParams() != 1 {
+			yyerror("fmap function should take one argument, does %d", t.NumParams())
+			n.Type = nil
+			return n
+		}
+		if t.NumResults() != 1 {
+			yyerror("fmap function should return one argument, does %d", t.NumResults())
+			n.Type = nil
+			return n
+		}
+		if !n.Right.Type.IsSlice() {
+			yyerror("fmap second argument type is not slice; have %L", n.Right.Type)
+			n.Type = nil
+			return n
+		}
+		n.Right = assignconv(n.Right, types.NewSlice(t.Params().Fields().Index(0).Type), "fmap \"func("+t.Params().SimpleString()+") "+t.Results().SimpleString()+"\"")
+		n.Type = types.NewSlice(t.Results().Fields().Index(0).Type)
+		checkwidth(n.Right.Type)
+
+		// NEW IMPLEMENTATION: This could technically check and range over maps too.
+		// The issue is, I never got the range-statement to work in walk.go, so this is
+		// commented out.
+		// The old implementation starts at the if t.NumParam Statement.
+
+		//// multiple cases:
+		//// func(key, value <T>) (key, value <T>) -> map[T]T -> map[T]T
+		//// func(key, value <T>) (value <T>)      -> map[T]T -> []T
+		//// func(value <T>)      (key, value <T>) -> []T     -> map[T]T
+		//// func(value <T>)      (value <T>)      -> []T     -> []T
+		//switch t.NumParams() {
+		//case 1:
+		//if !n.Right.Type.IsSlice() {
+		//yyerror("mapping function specifies one input parameter, but second argument type is not slice; have %L", n.Right.Type)
+		//n.Type = nil
+		//return n
+		//}
+		//n.Right = assignconv(n.Right, types.NewSlice(t.Params().Fields().Index(0).Type), "fmap \"func("+t.Params().SimpleString()+") "+t.Results().SimpleString()+"\"")
+		//case 2:
+		//if !n.Right.Type.IsMap() {
+		//yyerror("mapping function specifies two input parameters, but second argument type is not map")
+		//n.Type = nil
+		//return n
+		//}
+		//funcInput := types.NewMap(
+		//t.Params().Fields().Index(0).Type,
+		//t.Params().Fields().Index(1).Type,
+		//)
+		//n.Right = assignconv(n.Right, funcInput, "fmap \"func("+t.Params().SimpleString()+") "+t.Results().SimpleString()+"\"")
+		//default:
+		//yyerror("expected function to only take one or two arguments; got %d", t.NumParams())
+		//n.Type = nil
+		//return n
+		//}
+
+		//switch t.NumResults() {
+		//case 1:
+		//n.Type = types.NewSlice(t.Results().Fields().Index(0).Type)
+		//case 2:
+		//n.Type = types.NewMap(
+		//t.Results().Fields().Index(0).Type,
+		//t.Results().Fields().Index(1).Type,
+		//)
+		//default:
+		//yyerror("expected function to only return one or two arguments; got %d", t.NumResults())
+		//n.Type = nil
+		//return n
+		//}
+
+		//checkwidth(n.Right.Type)
+
 	case OCOPY:
 		ok |= ctxStmt | ctxExpr
 		typecheckargs(n)
@@ -2220,6 +2316,7 @@ func checkdefergo(n *Node) {
 
 	case OAPPEND,
 		OPREPEND,
+		OFMAP,
 		OCAP,
 		OCOMPLEX,
 		OIMAG,

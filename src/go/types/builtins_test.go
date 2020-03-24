@@ -29,6 +29,9 @@ var builtinCalls = []struct {
 	{"prepend", `type T int; var s []T; var n T; _ = prepend(n, s)`, `func(p.T, []p.T) []p.T`},
 	{"prepend", `var s []int; _ = (prepend)(0, s)`, `func(int, []int) []int`},
 
+	{"fmap", `var s []int; var f func(int) string; _ = fmap(f, s)`, `func(func(int) string, []int) []string`},
+	{"fmap", `type T int; var s []T; var f func(T) string; _ = fmap(f, s)`, `func(func(p.T) string, []p.T) []string`},
+
 	{"cap", `var s [10]int; _ = cap(s)`, `invalid type`},  // constant
 	{"cap", `var s [10]int; _ = cap(&s)`, `invalid type`}, // constant
 	{"cap", `var s []int64; _ = cap(s)`, `func([]int64) int`},

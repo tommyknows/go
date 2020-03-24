@@ -1187,6 +1187,10 @@ func (o *Order) expr(n, lhs *Node) *Node {
 			n = o.copyExpr(n, n.Type, false)
 		}
 
+	case OFMAP:
+		n.Left = o.expr(n.Left, nil)
+		n.Right = o.expr(n.Right, nil)
+
 	case OSLICE, OSLICEARR, OSLICESTR, OSLICE3, OSLICE3ARR:
 		n.Left = o.expr(n.Left, nil)
 		low, high, max := n.SliceBounds()

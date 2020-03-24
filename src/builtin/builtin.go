@@ -140,6 +140,12 @@ func append(slice []Type, elems ...Type) []Type
 // often in the variable holding the slice itself.
 func prepend(elem Type, slice []Type) []Type
 
+// The fmap built-in function maps a slice of elements from one type to
+// a slice of elements of another type, using the given function.
+// The returned slice always has the same number of elements as the
+// source slice.
+func fmap(fn func(Type) Type1, slice []Type) []Type1
+
 // The copy built-in function copies elements from a source slice into a
 // destination slice. (As a special case, it also will copy bytes from a
 // string to a slice of bytes.) The source and destination may overlap. Copy
