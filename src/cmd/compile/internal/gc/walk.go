@@ -699,6 +699,9 @@ opswitch:
 				yyerror("%v is go:notinheap; heap allocation disallowed", r.Type.Elem())
 			}
 			n.Right = walkfmap(r, init)
+		case OFOLD:
+			// x = fold(...)
+			n.Right = walkfold(n.Right, init)
 		}
 
 		if n.Left != nil && n.Right != nil {
@@ -1205,8 +1208,11 @@ opswitch:
 		// order should make sure we only see OAS(node, OPREPEND), which we handle above.
 		Fatalf("prepend outside assignment")
 	case OFMAP:
-		// order should make sure we only see OAS(node, OPREPEND), which we handle above.
-		Fatalf("prepend outside assignment")
+		// order should make sure we only see OAS(node, OFMAP), which we handle above.
+		Fatalf("fmap outside assignment")
+	case OFOLD:
+		// order should make sure we only see OAS(node, OFOLD), which we handle above.
+		Fatalf("fold outside assignment")
 
 	case OCOPY:
 		n = copyany(n, init, instrumenting && !compiling_runtime)
@@ -3083,6 +3089,51 @@ func walkfmap(n *Node, init *Nodes) *Node {
 	init.Append(l...)
 
 	return ndst
+}
+
+// walkfold rewrites the bulitin fold function to
+// fold(f(T1, T2) T2, s []T1, acc T2) T2
+//
+//   init {
+//     i := len(s) - 1
+//     for i := len(s) - 1; i >= 0; i-- {
+//       acc = f(s[i], acc)
+//     }
+//   }
+//   acc
+//
+func walkfold(n *Node, init *Nodes) *Node {
+	f := n.List.First()
+	s := n.List.Index(2)
+
+	acc := temp(n.List.Second().Type)
+	init.Append(nod(OAS, acc, n.List.Second()))
+
+	// var i int
+	ni := temp(types.Types[TINT])
+	// i = len(s) - 1
+	ninit := nod(OAS, ni, nod(OSUB, nod(OLEN, s, nil), nodintconst(1)))
+	// i >= 0
+	cond := nod(OGE, ni, nodintconst(0))
+	// i = i - 1
+	decr := nod(OAS, ni, nod(OSUB, ni, nodintconst(1)))
+
+	// f(s[i])
+	call := nod(OCALL, f, nil)
+	idx := nod(OINDEX, s, ni)
+	idx.SetBounded(true)
+	call.List.Append(idx, acc)
+	body := nod(OAS, acc, call)
+
+	loop := nod(OFOR, cond, decr)
+	loop.Ninit.Set1(ninit)
+	loop.Nbody.Set1(body)
+
+	loop = typecheck(loop, ctxStmt)
+	loop = walkstmt(loop)
+	init.Append(loop)
+
+	return acc
 }
 
 // Lower copy(a, b) to a memmove call or a runtime call.

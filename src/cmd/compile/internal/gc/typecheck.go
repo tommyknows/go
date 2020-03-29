@@ -1706,6 +1706,66 @@ func typecheck1(n *Node, top int) (res *Node) {
 		//}
 
 		//checkwidth(n.Right.Type)
+	case OFOLD:
+		ok |= ctxExpr
+		typecheckargs(n)
+		args := n.List
+		if args.Len() != 3 {
+			yyerror("not the rigth number of arguments to fold. expected=3, got=%d", args.Len())
+			n.Type = nil
+			return n
+		}
+
+		t := args.First().Type
+		if t == nil {
+			n.Type = nil
+			return n
+		}
+
+		if t.Etype != types.TFUNC {
+			yyerror("first argument to fold must be function, have %L", t)
+			n.Type = nil
+			return n
+		}
+
+		if t.NumParams() != 2 {
+			yyerror("fold function should take two arguments, does %d", t.NumParams())
+			n.Type = nil
+			return n
+		}
+		if t.NumResults() != 1 {
+			yyerror("fold function should return one argument, does %d", t.NumResults())
+			n.Type = nil
+			return n
+		}
+		args.SetSecond(
+			assignconv(
+				args.Second(),
+				t.Params().Fields().Index(1).Type,
+				"fold \"func("+t.Params().SimpleString()+") "+t.Results().SimpleString()+"\"",
+			),
+		)
+
+		if !args.Index(2).Type.IsSlice() {
+			yyerror("fold third argument type is not slice; have %L", args.Index(3).Type)
+			n.Type = nil
+			return n
+		}
+
+		if args.Index(2).Type.Elem() != t.Params().Fields().Index(0).Type {
+			yyerror("fold function first argument type not equal to given slice type. expected=%L, got=%L",
+				t.Params().Fields().Index(0).Type, args.Index(2).Type.Elem())
+			n.Type = nil
+			return n
+		}
+
+		args.SetIndex(2, assignconv(
+			args.Index(2),
+			types.NewSlice(t.Params().Fields().Index(0).Type),
+			"fold \"func("+t.Params().SimpleString()+") "+t.Results().SimpleString()+"\"",
+		))
+
+		n.Type = args.Second().Type
 
 	case OCOPY:
 		ok |= ctxStmt | ctxExpr
@@ -2317,6 +2377,7 @@ func checkdefergo(n *Node) {
 	case OAPPEND,
 		OPREPEND,
 		OFMAP,
+		OFOLD,
 		OCAP,
 		OCOMPLEX,
 		OIMAG,
