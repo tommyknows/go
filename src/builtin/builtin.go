@@ -146,6 +146,13 @@ func prepend(elem Type, slice []Type) []Type
 // source slice.
 func fmap(fn func(Type) Type1, slice []Type) []Type1
 
+// The fold built-in function folds over a slice of elements with the given
+// function. It takes the second argument and the last item of the list and
+// applies the function, then it takes the penultimate item from the end and
+// the result, and so on. See scanr for intermediate results.
+// It is equal to Haskell's 'foldr' function.
+func fold(f func(Type, Type1) Type1, init Type1, slice []Type) Type1
+
 // The copy built-in function copies elements from a source slice into a
 // destination slice. (As a special case, it also will copy bytes from a
 // string to a slice of bytes.) The source and destination may overlap. Copy

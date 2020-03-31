@@ -631,6 +631,7 @@ const (
 	OAPPEND       // append(List); after walk, Left may contain elem type descriptor
 	OPREPEND      // prepend(Left, Right)
 	OFMAP         // fmap(Left, Right); a typical map function from FP, left si the func,  right the slice
+	OFOLD         // fold(List)
 	OBYTES2STR    // Type(Left) (Type is string, Left is a []byte)
 	OBYTES2STRTMP // Type(Left) (Type is string, Left is a []byte, ephemeral)
 	ORUNES2STR    // Type(Left) (Type is string, Left is a []rune)

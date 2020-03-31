@@ -1253,6 +1253,7 @@ func hascallchan(n *Node) bool {
 	case OAPPEND,
 		OPREPEND,
 		OFMAP,
+		OFOLD,
 		OCALL,
 		OCALLFUNC,
 		OCALLINTER,

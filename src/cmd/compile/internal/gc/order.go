@@ -1191,6 +1191,19 @@ func (o *Order) expr(n, lhs *Node) *Node {
 		n.Left = o.expr(n.Left, nil)
 		n.Right = o.expr(n.Right, nil)
 
+		if lhs == nil || lhs.Op != ONAME && !samesafeexpr(lhs, n.Left) {
+			n = o.copyExpr(n, n.Type, false)
+		}
+
+	case OFOLD:
+		n.List.SetFirst(o.expr(n.List.First(), nil))
+		n.List.SetSecond(o.expr(n.List.Second(), nil))
+		n.List.SetIndex(2, o.expr(n.List.Index(2), nil))
+
+		if lhs == nil || lhs.Op != ONAME && !samesafeexpr(lhs, n.Left) {
+			n = o.copyExpr(n, n.Type, false)
+		}
+
 	case OSLICE, OSLICEARR, OSLICESTR, OSLICE3, OSLICE3ARR:
 		n.Left = o.expr(n.Left, nil)
 		low, high, max := n.SliceBounds()

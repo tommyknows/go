@@ -197,10 +197,40 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 		check.arguments(x, call, sig, func(x *operand, i int) {
 			arg(x, i)
 		}, nargs)
-		// ok to continue even if check.arguments reported errors
 
 		x.mode = value
 		x.typ = NewSlice(ret)
+		if check.Types != nil {
+			check.recordBuiltinType(call.Fun, sig)
+		}
+
+	case _Fold:
+		// fold(func(T1, T2) T2, T2, []T1) T2
+
+		// first parameter, the function
+		arg(x, 0)
+		// we simply need to extract the types from the function
+		s, ok := x.typ.Underlying().(*Signature)
+		if !ok {
+			check.invalidArg(x.pos(), "%s is not a function", x)
+			return
+		}
+
+		if s.Params().Len() != 2 {
+			check.invalidArg(x.pos(), "%s expected 2 arguments, got %d", x, s.Params().Len())
+			return
+		}
+		sliceType := s.Params().At(0).Type()
+		baseType := s.Params().At(1).Type()
+
+		// check general case by creating custom signature
+		sig := makeSig(baseType, makeSig(baseType, sliceType, baseType), baseType, NewSlice(sliceType))
+		check.arguments(x, call, sig, func(x *operand, i int) {
+			arg(x, i)
+		}, nargs)
+
+		x.mode = value
+		x.typ = baseType
 		if check.Types != nil {
 			check.recordBuiltinType(call.Fun, sig)
 		}
