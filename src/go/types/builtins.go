@@ -132,6 +132,7 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 			check.recordBuiltinType(call.Fun, sig)
 		}
 
+	// start-prepend-typecheck
 	case _Prepend:
 		// prepend(x T, s S) S, where T is the element type of S
 		// spec: prepend is like append, but adds to the beginning instead of the end of the slice.
@@ -171,7 +172,8 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 		if check.Types != nil {
 			check.recordBuiltinType(call.Fun, sig)
 		}
-
+	// end-prepend-typecheck
+	// start-fmap-typecheck
 	case _Fmap:
 		// fmap(func(T) T1, []T) []T1
 
@@ -203,7 +205,8 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 		if check.Types != nil {
 			check.recordBuiltinType(call.Fun, sig)
 		}
-
+	// end-fmap-typecheck
+	// start-fold-typecheck
 	case _Fold:
 		// fold(func(T1, T2) T2, T2, []T1) T2
 
@@ -234,6 +237,7 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 		if check.Types != nil {
 			check.recordBuiltinType(call.Fun, sig)
 		}
+	// end-fold-typecheck
 
 	case _Cap, _Len:
 		// cap(x)

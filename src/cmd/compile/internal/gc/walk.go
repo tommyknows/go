@@ -2996,9 +2996,12 @@ func walkappend(n *Node, init *Nodes, dst *Node) *Node {
 
 // walkprepend rewrites the builtin prepend(x, dst) to
 //
-//   s := make([]<T>, 1, len(dst)+1)
-//   s[0] = x
-//   append(s, dst...)
+//   init {
+//     dest := make([]<T>, 1, len(src)+1)
+//     dest[0] = x
+//     append(dest, src...)
+//   } 
+//   dest
 //
 func walkprepend(n *Node, init *Nodes) *Node {
 	tail := temp(n.Right.Type)
