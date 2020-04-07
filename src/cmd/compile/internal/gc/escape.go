@@ -811,6 +811,7 @@ func (e *Escape) call(ks []EscHole, call, where *Node) {
 				}
 			}
 
+		// start-prepend
 		case OPREPEND:
 			// imitate the behaviour from OAPPEND
 			paramKs[0] = e.heapHole()
@@ -818,6 +819,7 @@ func (e *Escape) call(ks []EscHole, call, where *Node) {
 			if types.Haspointers(call.Right.Type.Elem()) {
 				paramKs[1] = e.teeHole(paramKs[1], e.heapHole().deref(call, "prepended slice"))
 			}
+		// end-prepend
 		case OFMAP, OFOLD:
 			// TODO?
 			// they require different handling

@@ -2994,13 +2994,14 @@ func walkappend(n *Node, init *Nodes, dst *Node) *Node {
 	return ns
 }
 
-// walkprepend rewrites the builtin prepend(x, dst) to
+// start-prepend
+// walkprepend rewrites the builtin prepend(x, src) to
 //
 //   init {
 //     dest := make([]<T>, 1, len(src)+1)
 //     dest[0] = x
 //     append(dest, src...)
-//   } 
+//   }
 //   dest
 //
 func walkprepend(n *Node, init *Nodes) *Node {
@@ -3034,6 +3035,8 @@ func walkprepend(n *Node, init *Nodes) *Node {
 	a.List = asNodes([]*Node{ndst, tail})
 	return appendslice(a, init) // append(ndst, tail)
 }
+
+// end-prepend
 
 // walkfmap rewrites the bulitin fmap(f(in) out, []src) to
 //
@@ -3094,11 +3097,11 @@ func walkfmap(n *Node, init *Nodes) *Node {
 	return ndst
 }
 
-// walkfold rewrites the bulitin fold function to
+// TODO(tommyknows): actually use the given acc as the acc
+// walkfold rewrites the builtin fold function to
 // fold(f(T1, T2) T2, s []T1, acc T2) T2
 //
 //   init {
-//     i := len(s) - 1
 //     for i := len(s) - 1; i >= 0; i-- {
 //       acc = f(s[i], acc)
 //     }
@@ -3692,7 +3695,6 @@ func (n *Node) isIntOrdering() bool {
 		return false
 	}
 	return n.Left.Type.IsInteger() && n.Right.Type.IsInteger()
-}
 
 // walkinrange optimizes integer-in-range checks, such as 4 <= x && x < 10.
 // n must be an OANDAND or OOROR node.
@@ -4257,4 +4259,5 @@ func walkCheckPtrArithmetic(n *Node, init *Nodes) *Node {
 // levels.
 func checkPtr(fn *Node, level int) bool {
 	return Debug_checkptr >= level && fn.Func.Pragma&NoCheckPtr == 0
+}
 }

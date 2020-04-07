@@ -25,16 +25,16 @@ var builtinCalls = []struct {
 	{"append", `type T []byte; var s T; var str string; _ = append(s, str...)`, `func(p.T, string...) p.T`},
 	{"append", `type T []byte; type U string; var s T; var str U; _ = append(s, str...)`, `func(p.T, p.U...) p.T`},
 
-	// start-builtin-tests
+	// start-prepend
 	{"prepend", `var s []int; _ = prepend(0, s)`, `func(int, []int) []int`},
 	{"prepend", `type T int; var s []T; var n T; _ = prepend(n, s)`, `func(p.T, []p.T) []p.T`},
 	{"prepend", `var s []int; _ = (prepend)(0, s)`, `func(int, []int) []int`},
+	// end-prepend
 
 	{"fmap", `var s []int; var f func(int) string; _ = fmap(f, s)`, `func(func(int) string, []int) []string`},
 	{"fmap", `type T int; var s []T; var f func(T) string; _ = fmap(f, s)`, `func(func(p.T) string, []p.T) []string`},
 
 	{"fold", `var s []string; var b int; var f func(string, int) int; _ = fold(f, b, s)`, `func(func(string, int) int, int, []string) int`},
-	// end-builtin-tests
 
 	{"cap", `var s [10]int; _ = cap(s)`, `invalid type`},  // constant
 	{"cap", `var s [10]int; _ = cap(&s)`, `invalid type`}, // constant

@@ -42,6 +42,7 @@ var typedefs = [...]struct {
 	{"uintptr", TUINTPTR, TUINT32, TUINT64},
 }
 
+// start-builtins
 var builtinFuncs = [...]struct {
 	name string
 	op   Op
@@ -51,6 +52,7 @@ var builtinFuncs = [...]struct {
 	{"fmap", OFMAP},
 	{"fold", OFOLD},
 	{"cap", OCAP},
+	// end-builtins
 	{"close", OCLOSE},
 	{"complex", OCOMPLEX},
 	{"copy", OCOPY},

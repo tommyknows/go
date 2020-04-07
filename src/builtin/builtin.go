@@ -149,7 +149,7 @@ func fmap(fn func(Type) Type1, slice []Type) []Type1
 // The fold built-in function folds over a slice of elements with the given
 // function. It takes the second argument and the last item of the list and
 // applies the function, then it takes the penultimate item from the end and
-// the result, and so on. See scanr for intermediate results.
+// the result, and so on.
 // It is equal to Haskell's 'foldr' function.
 func fold(f func(Type, Type1) Type1, init Type1, slice []Type) Type1
 

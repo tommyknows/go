@@ -1576,6 +1576,7 @@ func typecheck1(n *Node, top int) (res *Node) {
 			checkwidth(as[i].Type) // ensure width is calculated for backend
 		}
 
+	// start-prepend-typecheck
 	case OPREPEND:
 		ok |= ctxExpr
 		typecheckargs(n)
@@ -1610,6 +1611,7 @@ func typecheck1(n *Node, top int) (res *Node) {
 		}
 		n.Left = assignconv(n.Left, t.Elem(), "prepend")
 		checkwidth(n.Left.Type)
+	// end-prepend-typecheck
 
 	case OFMAP:
 		ok |= ctxExpr

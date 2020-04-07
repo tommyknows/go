@@ -1179,6 +1179,7 @@ func (o *Order) expr(n, lhs *Node) *Node {
 			n = o.copyExpr(n, n.Type, false)
 		}
 
+	// start-prepend
 	case OPREPEND:
 		n.Left = o.expr(n.Left, nil)
 		n.Right = o.expr(n.Right, nil)
@@ -1186,6 +1187,7 @@ func (o *Order) expr(n, lhs *Node) *Node {
 		if lhs == nil || lhs.Op != ONAME && !samesafeexpr(lhs, n.Left) {
 			n = o.copyExpr(n, n.Type, false)
 		}
+	// end-prepend
 
 	case OFMAP:
 		n.Left = o.expr(n.Left, nil)
