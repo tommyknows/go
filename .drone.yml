@@ -1,0 +1,15 @@
+kind: pipeline
+type: kubernetes
+name: default
+
+steps:
+  - name: test
+    image: golang:1.14
+    privileged: true
+    environment:
+      GO111MODULE: on
+    commands:
+       - cd ./src
+       - ulimit -l
+       - ulimit -l unlimited
+       - ./all.bash

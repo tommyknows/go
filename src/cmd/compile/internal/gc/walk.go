@@ -3695,6 +3695,7 @@ func (n *Node) isIntOrdering() bool {
 		return false
 	}
 	return n.Left.Type.IsInteger() && n.Right.Type.IsInteger()
+}
 
 // walkinrange optimizes integer-in-range checks, such as 4 <= x && x < 10.
 // n must be an OANDAND or OOROR node.
@@ -4259,5 +4260,4 @@ func walkCheckPtrArithmetic(n *Node, init *Nodes) *Node {
 // levels.
 func checkPtr(fn *Node, level int) bool {
 	return Debug_checkptr >= level && fn.Func.Pragma&NoCheckPtr == 0
-}
 }
