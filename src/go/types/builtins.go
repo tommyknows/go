@@ -207,8 +207,9 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 		}
 	// end-fmap-typecheck
 	// start-fold-typecheck
-	case _Fold:
-		// fold(func(T1, T2) T2, T2, []T1) T2
+	case _Foldr, _Foldl:
+		// foldr(func(T1, T2) T2, T2, []T1) T2
+		// foldl(func(T2, T1) T2, T2, []T1) T2
 
 		// first parameter, the function
 		arg(x, 0)
@@ -223,17 +224,25 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 			check.invalidArg(x.pos(), "%s expected 2 arguments, got %d", x, s.Params().Len())
 			return
 		}
-		sliceType := s.Params().At(0).Type()
-		baseType := s.Params().At(1).Type()
+
+		var accType, foldType Type
+		if id == _Foldr {
+			accType = s.Params().At(1).Type()
+			foldType = s.Params().At(0).Type()
+		} else {
+			accType = s.Params().At(0).Type()
+			foldType = s.Params().At(1).Type()
+		}
+		funcSig := makeSig(accType, s.Params().At(0).Type(), s.Params().At(1).Type())
 
 		// check general case by creating custom signature
-		sig := makeSig(baseType, makeSig(baseType, sliceType, baseType), baseType, NewSlice(sliceType))
+		sig := makeSig(accType, funcSig, accType, NewSlice(foldType))
 		check.arguments(x, call, sig, func(x *operand, i int) {
 			arg(x, i)
 		}, nargs)
 
 		x.mode = value
-		x.typ = baseType
+		x.typ = accType
 		if check.Types != nil {
 			check.recordBuiltinType(call.Fun, sig)
 		}

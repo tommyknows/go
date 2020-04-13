@@ -34,7 +34,8 @@ var builtinCalls = []struct {
 	{"fmap", `var s []int; var f func(int) string; _ = fmap(f, s)`, `func(func(int) string, []int) []string`},
 	{"fmap", `type T int; var s []T; var f func(T) string; _ = fmap(f, s)`, `func(func(p.T) string, []p.T) []string`},
 
-	{"fold", `var s []string; var b int; var f func(string, int) int; _ = fold(f, b, s)`, `func(func(string, int) int, int, []string) int`},
+	{"foldr", `var s []string; var b int; var f func(string, int) int; _ = foldr(f, b, s)`, `func(func(string, int) int, int, []string) int`},
+	{"foldl", `var s []string; var b int; var f func(int, string) int; _ = foldl(f, b, s)`, `func(func(int, string) int, int, []string) int`},
 
 	{"cap", `var s [10]int; _ = cap(s)`, `invalid type`},  // constant
 	{"cap", `var s [10]int; _ = cap(&s)`, `invalid type`}, // constant

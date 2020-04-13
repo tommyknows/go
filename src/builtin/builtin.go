@@ -133,11 +133,13 @@ type ComplexType complex64
 //	slice = append([]byte("hello "), "world"...)
 func append(slice []Type, elems ...Type) []Type
 
-// The prepend built-in function prepends an element to the start of the slice.
-// As slices do not have any capacity in the beginning, this function always
-// results in an expensive copy of the original slice. Prepend returns the
-// updated slice. It is therefore necessary to store the result of prepend,
-// often in the variable holding the slice itself.
+// begin-newbuiltins
+// The prepend built-in function prepends an element to the start of
+// the slice.  As slices do not have any capacity in the beginning,
+// this function always results in an expensive copy of the original
+// slice. Prepend returns the updated slice. It is therefore necessary
+// to store the result of prepend, often in the variable holding the
+// slice itself.
 func prepend(elem Type, slice []Type) []Type
 
 // The fmap built-in function maps a slice of elements from one type to
@@ -146,12 +148,16 @@ func prepend(elem Type, slice []Type) []Type
 // source slice.
 func fmap(fn func(Type) Type1, slice []Type) []Type1
 
-// The fold built-in function folds over a slice of elements with the given
-// function. It takes the second argument and the last item of the list and
-// applies the function, then it takes the penultimate item from the end and
-// the result, and so on.
-// It is equal to Haskell's 'foldr' function.
-func fold(f func(Type, Type1) Type1, init Type1, slice []Type) Type1
+// The fold built-in functions fold over a slice of elements with the
+// given function. It takes init, the second argument, and the last
+// item of the list and applies the function, then it takes the
+// penultimate item from the end and the result, and so on.
+// foldr and foldl differ in their evaluation order - foldr starts
+// at the last, foldl at the first element of the slice.
+func foldr(fn func(Type, Type1) Type1, acc Type1, slice []Type) Type1
+func foldl(fn func(Type1, Type) Type1, acc Type1, slice []Type) Type1
+
+// end-newbuiltins
 
 // The copy built-in function copies elements from a source slice into a
 // destination slice. (As a special case, it also will copy bytes from a

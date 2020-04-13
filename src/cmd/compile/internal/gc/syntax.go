@@ -607,13 +607,11 @@ func (f *Func) setWBPos(pos src.XPos) {
 
 //go:generate stringer -type=Op -trimprefix=O
 
-// start-builtins-one
 type Op uint8
 
 // Node ops.
 const (
 	OXXX Op = iota
-	// end-builtins-one
 
 	// names
 	ONAME    // var or func name
@@ -630,13 +628,12 @@ const (
 	OADDSTR // +{List} (string addition, list elements are strings)
 	OADDR   // &Left
 	OANDAND // Left && Right
-	// start-builtins-two
 	OAPPEND    // append(List); after walk, Left may contain elem type descriptor
 	OPREPEND   // prepend(Left, Right)
 	OFMAP      // fmap(Left, Right); a typical map function from FP, left is the func, right the slice
-	OFOLD      // fold(List)
+	OFOLDR     // foldr(List)
+	OFOLDL     // foldl(List)
 	OBYTES2STR // Type(Left) (Type is string, Left is a []byte)
-	// end-builtins-two
 	OBYTES2STRTMP // Type(Left) (Type is string, Left is a []byte, ephemeral)
 	ORUNES2STR    // Type(Left) (Type is string, Left is a []rune)
 	OSTR2BYTES    // Type(Left) (Type is []byte, Left is a string)

@@ -105,7 +105,7 @@ func defPredeclaredNil() {
 	def(&Nil{object{name: "nil", typ: Typ[UntypedNil], color_: black}})
 }
 
-// start
+// start-builtin
 // A builtinId is the id of a builtin function.
 type builtinId int
 
@@ -114,8 +114,9 @@ const (
 	_Append builtinId = iota
 	_Prepend
 	_Fmap
-	_Fold
-	// end
+	_Foldr
+	_Foldl
+	// end-builtin
 	_Cap
 	_Close
 	_Complex
@@ -141,7 +142,7 @@ const (
 	_Trace
 )
 
-// predecstart
+// start-predeclared
 var predeclaredFuncs = [...]struct {
 	name     string
 	nargs    int
@@ -151,9 +152,10 @@ var predeclaredFuncs = [...]struct {
 	_Append:  {"append", 1, true, expression},
 	_Prepend: {"prepend", 2, false, expression},
 	_Fmap:    {"fmap", 2, false, expression},
-	_Fold:    {"fold", 3, false, expression},
+	_Foldr:   {"foldr", 3, false, expression},
+	_Foldl:   {"foldl", 3, false, expression},
 	_Cap:     {"cap", 1, false, expression},
-	// predecend
+	// end-predeclared
 	_Close:   {"close", 1, false, statement},
 	_Complex: {"complex", 2, false, expression},
 	_Copy:    {"copy", 2, false, statement},

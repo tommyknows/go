@@ -397,9 +397,11 @@ func (v *hairyVisitor) visit(n *Node) bool {
 		v.reason = "unhandled op " + n.Op.String()
 		return true
 
-		// TODO(tommyknows): add OFMAP and OFOLD
-	case OAPPEND, OPREPEND:
+	case OAPPEND:
 		v.budget -= inlineExtraAppendCost
+
+	case OPREPEND, OFMAP, OFOLDR, OFOLDL:
+		// TODO(tommyknows): add OFMAP and OFOLD
 
 	case ODCLCONST, OEMPTY, OFALL, OLABEL:
 		// These nodes don't produce code; omit from inlining budget.

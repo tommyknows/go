@@ -1576,7 +1576,6 @@ func typecheck1(n *Node, top int) (res *Node) {
 			checkwidth(as[i].Type) // ensure width is calculated for backend
 		}
 
-	// start-prepend-typecheck
 	case OPREPEND:
 		ok |= ctxExpr
 		typecheckargs(n)
@@ -1611,7 +1610,6 @@ func typecheck1(n *Node, top int) (res *Node) {
 		}
 		n.Left = assignconv(n.Left, t.Elem(), "prepend")
 		checkwidth(n.Left.Type)
-	// end-prepend-typecheck
 
 	case OFMAP:
 		ok |= ctxExpr
@@ -1708,7 +1706,7 @@ func typecheck1(n *Node, top int) (res *Node) {
 		//}
 
 		//checkwidth(n.Right.Type)
-	case OFOLD:
+	case OFOLDR, OFOLDL:
 		ok |= ctxExpr
 		typecheckargs(n)
 		args := n.List
@@ -1740,10 +1738,21 @@ func typecheck1(n *Node, top int) (res *Node) {
 			n.Type = nil
 			return n
 		}
+
+		// depending on left or right fold, it is the first or second
+		// argument in the fold function
+		var accType, elemType *types.Type
+		first, second := t.Params().Fields().Index(0).Type, t.Params().Fields().Index(1).Type
+		if n.Op == OFOLDR {
+			accType, elemType = second, first
+		} else {
+			accType, elemType = first, second
+		}
+
 		args.SetSecond(
 			assignconv(
 				args.Second(),
-				t.Params().Fields().Index(1).Type,
+				accType,
 				"fold \"func("+t.Params().SimpleString()+") "+t.Results().SimpleString()+"\"",
 			),
 		)
@@ -1754,18 +1763,13 @@ func typecheck1(n *Node, top int) (res *Node) {
 			return n
 		}
 
-		if args.Index(2).Type.Elem() != t.Params().Fields().Index(0).Type {
-			yyerror("fold function first argument type not equal to given slice type. expected=%L, got=%L",
-				t.Params().Fields().Index(0).Type, args.Index(2).Type.Elem())
-			n.Type = nil
-			return n
-		}
-
-		args.SetIndex(2, assignconv(
-			args.Index(2),
-			types.NewSlice(t.Params().Fields().Index(0).Type),
-			"fold \"func("+t.Params().SimpleString()+") "+t.Results().SimpleString()+"\"",
-		))
+		args.SetIndex(2,
+			assignconv(
+				args.Index(2),
+				types.NewSlice(elemType),
+				"fold \"func("+t.Params().SimpleString()+") "+t.Results().SimpleString()+"\"",
+			),
+		)
 
 		n.Type = args.Second().Type
 
@@ -2379,7 +2383,8 @@ func checkdefergo(n *Node) {
 	case OAPPEND,
 		OPREPEND,
 		OFMAP,
-		OFOLD,
+		OFOLDR,
+		OFOLDL,
 		OCAP,
 		OCOMPLEX,
 		OIMAG,

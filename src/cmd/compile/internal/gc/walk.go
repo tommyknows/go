@@ -699,9 +699,11 @@ opswitch:
 				yyerror("%v is go:notinheap; heap allocation disallowed", r.Type.Elem())
 			}
 			n.Right = walkfmap(r, init)
-		case OFOLD:
+		case OFOLDR:
 			// x = fold(...)
-			n.Right = walkfold(n.Right, init)
+			n.Right = walkfold(n.Right, init, true)
+		case OFOLDL:
+			n.Right = walkfold(n.Right, init, false)
 		}
 
 		if n.Left != nil && n.Right != nil {
@@ -1210,7 +1212,7 @@ opswitch:
 	case OFMAP:
 		// order should make sure we only see OAS(node, OFMAP), which we handle above.
 		Fatalf("fmap outside assignment")
-	case OFOLD:
+	case OFOLDL, OFOLDR:
 		// order should make sure we only see OAS(node, OFOLD), which we handle above.
 		Fatalf("fold outside assignment")
 
@@ -2994,17 +2996,18 @@ func walkappend(n *Node, init *Nodes, dst *Node) *Node {
 	return ns
 }
 
-// start-prepend
-// walkprepend rewrites the builtin prepend(x, src) to
+// start-prepend-header
+// walkprepend rewrites the builtin prepend(elem, slice) to
 //
 //   init {
-//     dest := make([]<T>, 1, len(src)+1)
-//     dest[0] = x
-//     append(dest, src...)
+//     dest := make([]<T>, 1, len(slice)+1)
+//     dest[0] = elem
+//     append(dest, slice...)
 //   }
 //   dest
 //
 func walkprepend(n *Node, init *Nodes) *Node {
+	// end-prepend-header
 	tail := temp(n.Right.Type)
 
 	var l []*Node
@@ -3036,19 +3039,19 @@ func walkprepend(n *Node, init *Nodes) *Node {
 	return appendslice(a, init) // append(ndst, tail)
 }
 
-// end-prepend
-
-// walkfmap rewrites the bulitin fmap(f(in) out, []src) to
+// start-fmap-header
+// walkfmap rewrites the builtin fmap(f(in) out, []slice) to
 //
 //   init {
-//     dst = make([]out, len(src))
-//     for i, e := range src {
+//     dst = make([]out, len(slice))
+//     for i, e := range slice {
 //       dst[i] = f(e)
 //     }
 //   }
 //   dst
 //
 func walkfmap(n *Node, init *Nodes) *Node {
+	// end-fmap-header
 	mapFunc := n.Left
 	source := n.Right
 	var l []*Node
@@ -3097,47 +3100,71 @@ func walkfmap(n *Node, init *Nodes) *Node {
 	return ndst
 }
 
-// TODO(tommyknows): actually use the given acc as the acc
-// walkfold rewrites the builtin fold function to
-// fold(f(T1, T2) T2, s []T1, acc T2) T2
+// start-fold-header
+// walkfold rewrites the builtin fold function.
+// For the right fold:
+//   foldr(f(T1, T2) T2, a T2, s []T1) T2
 //
-//   init {
-//     for i := len(s) - 1; i >= 0; i-- {
-//       acc = f(s[i], acc)
+//     init {
+//       acc = a
+//       for i := len(s) - 1; i >= 0; i-- {
+//         acc = f(s[i], acc)
+//       }
 //     }
-//   }
-//   acc
+//     acc
 //
-func walkfold(n *Node, init *Nodes) *Node {
+// And the left fold:
+//   foldl(f(T2, T1) T2, a T2, s []T1) T2
+//
+//     init {
+//       acc = a
+//       for i := 0; i < len(s); i++ {
+//         acc = f(acc, s[i])
+//       }
+//     }
+//     acc
+func walkfold(n *Node, init *Nodes, isRight bool) *Node {
+	// end-fold-header
 	f := n.List.First()
 	s := n.List.Index(2)
 
+	var l []*Node
 	acc := temp(n.List.Second().Type)
-	init.Append(nod(OAS, acc, n.List.Second()))
+	l = append(l, nod(OAS, acc, n.List.Second()))
 
 	// var i int
 	ni := temp(types.Types[TINT])
-	// i = len(s) - 1
-	ninit := nod(OAS, ni, nod(OSUB, nod(OLEN, s, nil), nodintconst(1)))
-	// i >= 0
-	cond := nod(OGE, ni, nodintconst(0))
-	// i = i - 1
-	decr := nod(OAS, ni, nod(OSUB, ni, nodintconst(1)))
-
 	// f(s[i])
 	call := nod(OCALL, f, nil)
 	idx := nod(OINDEX, s, ni)
 	idx.SetBounded(true)
-	call.List.Append(idx, acc)
+
+	var ninit, cond, post *Node
+	if isRight {
+		// i = len(s) -1; i >= 0; i = i -1
+		ninit = nod(OAS, ni, nod(OSUB, nod(OLEN, s, nil), nodintconst(1)))
+		cond = nod(OGE, ni, nodintconst(0))
+		post = nod(OAS, ni, nod(OSUB, ni, nodintconst(1)))
+		call.List.Append(idx, acc)
+	} else {
+		// i = 0; i < len(s); i = i + 1
+		ninit = nod(OAS, ni, nodintconst(0))
+		cond = nod(OLT, ni, nod(OLEN, s, nil))
+		post = nod(OAS, ni, nod(OADD, ni, nodintconst(1)))
+		call.List.Append(acc, idx)
+	}
+
 	body := nod(OAS, acc, call)
 
-	loop := nod(OFOR, cond, decr)
+	loop := nod(OFOR, cond, post)
 	loop.Ninit.Set1(ninit)
 	loop.Nbody.Set1(body)
 
-	loop = typecheck(loop, ctxStmt)
-	loop = walkstmt(loop)
-	init.Append(loop)
+	l = append(l, loop)
+
+	typecheckslice(l, ctxStmt)
+	walkstmtlist(l)
+	init.Append(l...)
 
 	return acc
 }
