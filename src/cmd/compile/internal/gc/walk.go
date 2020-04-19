@@ -704,6 +704,8 @@ opswitch:
 			n.Right = walkfold(n.Right, init, true)
 		case OFOLDL:
 			n.Right = walkfold(n.Right, init, false)
+		case OFILTER:
+			n.Right = walkfilter(n.Right, init)
 		}
 
 		if n.Left != nil && n.Right != nil {
@@ -3053,6 +3055,10 @@ func walkprepend(n *Node, init *Nodes) *Node {
 func walkfmap(n *Node, init *Nodes) *Node {
 	// end-fmap-header
 	mapFunc := n.Left
+	if mapFunc.Op == OCLOSURE {
+		mapFunc = walkclosure(mapFunc, init)
+	}
+
 	source := n.Right
 	var l []*Node
 
@@ -3086,8 +3092,8 @@ func walkfmap(n *Node, init *Nodes) *Node {
 	nx := nod(OINDEX, source, ni)
 	nx.SetBounded(true)
 
-	funCall := nod(OCALL, n.Left, nil)
-	funCall.List.Append(nx)
+	funCall := nod(OCALL, mapFunc, nil)
+	funCall.List.Set1(nx)
 
 	ran.Nbody.Append(nod(OAS, nod(OINDEX, ndst, ni), funCall))
 
@@ -3128,6 +3134,10 @@ func walkfold(n *Node, init *Nodes, isRight bool) *Node {
 	f := n.List.First()
 	s := n.List.Index(2)
 
+	if f.Op == OCLOSURE {
+		f = walkclosure(f, init)
+	}
+
 	var l []*Node
 	acc := temp(n.List.Second().Type)
 	l = append(l, nod(OAS, acc, n.List.Second()))
@@ -3167,6 +3177,85 @@ func walkfold(n *Node, init *Nodes, isRight bool) *Node {
 	init.Append(l...)
 
 	return acc
+}
+
+// TODO(tommyknows): udpate comment
+//
+//   init {
+//     dst = make([]out, len(slice))
+//     for i, e := range slice {
+//       dst[i] = f(e)
+//     }
+//   }
+//   dst
+//
+func walkfilter(n *Node, init *Nodes) *Node {
+	source := n.Right
+	var l []*Node
+
+	// filter algorithm:
+	// func filter(f func(int) bool, s []int) []int {
+	//     filtered := make(int, 0, len(s))
+	//     for i := range s {
+	//         if f(s[i]) {
+	//             filtered = append(filtered, s[i])
+	//         }
+	//     }
+	// }
+
+	// get the result type of the mapping function
+	makeType := nod(OTYPE, nil, nil)
+	makeType.Type = source.Type
+
+	makeDest := nod(OMAKE, nil, nil)
+	makeDest.List.Append(makeType, nodintconst(0), nod(OLEN, source, nil)) // make([]<T>, len(src))
+
+	// create the destination slice / map
+	filtered := temp(source.Type)
+	l = append(l, nod(OAS, filtered, makeDest)) // ndst = make([]<T>, len(src))
+
+	// for idx := range source {
+	//   if f(s[i]) {
+	//     filtered = append(filtered, s[i])
+	//   }
+	// }
+	ran := nod(ORANGE, nil, source)
+	ran.SetColas(true)
+	ni := temp(types.Types[TINT])
+	ni.Name.Defn = ran
+	ni.Type = types.Types[TINT]
+
+	ran.Ninit.Append(nod(ODCL, ni, nil))
+
+	ran.List.Set1(ni)
+
+	nx := nod(OINDEX, source, ni)
+	nx.SetBounded(true)
+
+	if n.Left.Op == OCLOSURE {
+		n.Left = walkclosure(n.Left, init)
+	}
+
+	funCall := nod(OCALL, n.Left, nil)
+	funCall.List.Set1(nod(OINDEX, source, ni))
+
+	ifStmt := nod(OIF, nod(OEQ, funCall, nodbool(true)), nil)
+
+	a := nod(OAPPEND, nil, nil)
+	a.List = asNodes([]*Node{filtered, nx})
+	ifStmt.Nbody.Append(nod(OAS, filtered, a))
+
+	ran.Nbody.Append(
+		ifStmt,
+	)
+
+	l = append(l, ran)
+
+	typecheckslice(l, ctxStmt)
+	walkstmtlist(l)
+	init.Append(l...)
+
+	return filtered
 }
 
 // Lower copy(a, b) to a memmove call or a runtime call.

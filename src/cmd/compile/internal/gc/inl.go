@@ -400,7 +400,7 @@ func (v *hairyVisitor) visit(n *Node) bool {
 	case OAPPEND:
 		v.budget -= inlineExtraAppendCost
 
-	case OPREPEND, OFMAP, OFOLDR, OFOLDL:
+	case OPREPEND, OFMAP, OFOLDR, OFOLDL, OFILTER:
 		// TODO(tommyknows): add OFMAP and OFOLD
 
 	case ODCLCONST, OEMPTY, OFALL, OLABEL:

@@ -246,7 +246,41 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 		if check.Types != nil {
 			check.recordBuiltinType(call.Fun, sig)
 		}
-	// end-fold-typecheck
+		// end-fold-typecheck
+
+	case _Filter:
+		arg(x, 0)
+		s, ok := x.typ.Underlying().(*Signature)
+		if !ok {
+			check.invalidArg(x.pos(), "%s is not a function", x)
+			return
+		}
+		if s.Results().Len() != 1 {
+			check.invalidArg(x.pos(), "%s returns more than one value", x)
+			return
+		}
+		ret := s.Results().At(0).Type()
+		if !isBoolean(ret) {
+			check.invalidArg(x.pos(), "%s does not return boolean", x)
+			return
+		}
+		if s.Params().Len() != 1 {
+			check.invalidArg(x.pos(), "%s expects more than one value", x)
+			return
+		}
+		param := s.Params().At(0).Type()
+
+		// check general case by creating custom signature
+		sig := makeSig(NewSlice(param), makeSig(ret, param), NewSlice(param))
+		check.arguments(x, call, sig, func(x *operand, i int) {
+			arg(x, i)
+		}, nargs)
+
+		x.mode = value
+		x.typ = NewSlice(param)
+		if check.Types != nil {
+			check.recordBuiltinType(call.Fun, sig)
+		}
 
 	case _Cap, _Len:
 		// cap(x)

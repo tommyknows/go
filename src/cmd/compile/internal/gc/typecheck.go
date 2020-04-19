@@ -1773,6 +1773,56 @@ func typecheck1(n *Node, top int) (res *Node) {
 
 		n.Type = args.Second().Type
 
+	case OFILTER:
+		ok |= ctxExpr
+		typecheckargs(n)
+		if !twoarg(n) {
+			n.Type = nil
+			return n
+		}
+
+		t := n.Left.Type
+		if t == nil {
+			n.Type = nil
+			return n
+		}
+
+		if t.Etype != types.TFUNC {
+			yyerror("first argument to filter must be function, have %L", t)
+			n.Type = nil
+			return n
+		}
+
+		if n.Right.Type == nil {
+			yyerror("second argument has no type")
+			n.Type = nil
+			return n
+		}
+
+		if t.NumParams() != 1 {
+			yyerror("filter function should take one argument, does %d", t.NumParams())
+			n.Type = nil
+			return n
+		}
+		if t.NumResults() != 1 {
+			yyerror("filter function should return one argument, does %d", t.NumResults())
+			n.Type = nil
+			return n
+		}
+		if t.Results().Fields().Index(0).Type.Etype != types.TBOOL {
+			yyerror("filter function should return bool, does %d", t.Results().Fields().Index(0).Type)
+			n.Type = nil
+			return n
+		}
+		if !n.Right.Type.IsSlice() {
+			yyerror("filter second argument type is not slice; have %L", n.Right.Type)
+			n.Type = nil
+			return n
+		}
+		n.Right = assignconv(n.Right, types.NewSlice(t.Params().Fields().Index(0).Type), "filter \"func("+t.Params().SimpleString()+") "+t.Results().SimpleString()+"\"")
+		n.Type = n.Right.Type
+		checkwidth(n.Right.Type)
+
 	case OCOPY:
 		ok |= ctxStmt | ctxExpr
 		typecheckargs(n)

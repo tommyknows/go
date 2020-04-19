@@ -1187,7 +1187,7 @@ func (o *Order) expr(n, lhs *Node) *Node {
 			n = o.copyExpr(n, n.Type, false)
 		}
 
-	case OFMAP:
+	case OFMAP, OFILTER:
 		n.Left = o.expr(n.Left, nil)
 		n.Right = o.expr(n.Right, nil)
 

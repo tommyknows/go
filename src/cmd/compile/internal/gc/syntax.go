@@ -621,19 +621,20 @@ const (
 	OLITERAL // literal
 
 	// expressions
-	OADD    // Left + Right
-	OSUB    // Left - Right
-	OOR     // Left | Right
-	OXOR    // Left ^ Right
-	OADDSTR // +{List} (string addition, list elements are strings)
-	OADDR   // &Left
-	OANDAND // Left && Right
-	OAPPEND    // append(List); after walk, Left may contain elem type descriptor
-	OPREPEND   // prepend(Left, Right)
-	OFMAP      // fmap(Left, Right); a typical map function from FP, left is the func, right the slice
-	OFOLDR     // foldr(List)
-	OFOLDL     // foldl(List)
-	OBYTES2STR // Type(Left) (Type is string, Left is a []byte)
+	OADD          // Left + Right
+	OSUB          // Left - Right
+	OOR           // Left | Right
+	OXOR          // Left ^ Right
+	OADDSTR       // +{List} (string addition, list elements are strings)
+	OADDR         // &Left
+	OANDAND       // Left && Right
+	OAPPEND       // append(List); after walk, Left may contain elem type descriptor
+	OPREPEND      // prepend(Left, Right)
+	OFMAP         // fmap(Left, Right); a typical map function from FP, left is the func, right the slice
+	OFOLDR        // foldr(List)
+	OFOLDL        // foldl(List)
+	OFILTER       // filter(Left, right)
+	OBYTES2STR    // Type(Left) (Type is string, Left is a []byte)
 	OBYTES2STRTMP // Type(Left) (Type is string, Left is a []byte, ephemeral)
 	ORUNES2STR    // Type(Left) (Type is string, Left is a []rune)
 	OSTR2BYTES    // Type(Left) (Type is []byte, Left is a string)

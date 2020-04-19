@@ -116,6 +116,7 @@ const (
 	_Fmap
 	_Foldr
 	_Foldl
+	_Filter
 	// end-builtin
 	_Cap
 	_Close
@@ -154,6 +155,7 @@ var predeclaredFuncs = [...]struct {
 	_Fmap:    {"fmap", 2, false, expression},
 	_Foldr:   {"foldr", 3, false, expression},
 	_Foldl:   {"foldl", 3, false, expression},
+	_Filter: {"filter", 2, false, expression},
 	_Cap:     {"cap", 1, false, expression},
 	// end-predeclared
 	_Close:   {"close", 1, false, statement},

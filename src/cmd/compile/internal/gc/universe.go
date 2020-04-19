@@ -51,6 +51,7 @@ var builtinFuncs = [...]struct {
 	{"fmap", OFMAP},
 	{"foldr", OFOLDR},
 	{"foldl", OFOLDL},
+	{"filter", OFILTER},
 	{"cap", OCAP},
 	{"close", OCLOSE},
 	{"complex", OCOMPLEX},

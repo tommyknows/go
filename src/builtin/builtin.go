@@ -157,6 +157,14 @@ func fmap(fn func(Type) Type1, slice []Type) []Type1
 func foldr(fn func(Type, Type1) Type1, acc Type1, slice []Type) Type1
 func foldl(fn func(Type1, Type) Type1, acc Type1, slice []Type) Type1
 
+// The filter built-in function filters a slice with the given
+// function. If the function returns true on an element, the
+// element will be added to the returned slice.
+// The returned slice will always have the same capacity as the
+// original slice, but the length will always be equal to the
+// number of elements that returned true in the filter function.
+func filter(fn func(Type) bool, slice []Type) []Type
+
 // end-newbuiltins
 
 // The copy built-in function copies elements from a source slice into a

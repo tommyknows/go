@@ -1255,6 +1255,7 @@ func hascallchan(n *Node) bool {
 		OFMAP,
 		OFOLDR,
 		OFOLDL,
+		OFILTER,
 		OCALL,
 		OCALLFUNC,
 		OCALLINTER,

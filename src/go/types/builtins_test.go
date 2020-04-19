@@ -37,6 +37,8 @@ var builtinCalls = []struct {
 	{"foldr", `var s []string; var b int; var f func(string, int) int; _ = foldr(f, b, s)`, `func(func(string, int) int, int, []string) int`},
 	{"foldl", `var s []string; var b int; var f func(int, string) int; _ = foldl(f, b, s)`, `func(func(int, string) int, int, []string) int`},
 
+	{"filter", `var s []int; var f func(int) bool; _ = filter(f, s)`, `func(func(int) bool, []int) []int`},
+
 	{"cap", `var s [10]int; _ = cap(s)`, `invalid type`},  // constant
 	{"cap", `var s [10]int; _ = cap(&s)`, `invalid type`}, // constant
 	{"cap", `var s []int64; _ = cap(s)`, `func([]int64) int`},
