@@ -3179,23 +3179,28 @@ func walkfold(n *Node, init *Nodes, isRight bool) *Node {
 	return acc
 }
 
-// TODO(tommyknows): udpate comment
+// start-filter-header
+// walkfilter rewrites the builtin filter function.
+//   filter(f(T) bool, slice []T) []T
 //
 //   init {
-//     dst = make([]out, len(slice))
+//     dst = make([]out, 0)
 //     for i, e := range slice {
-//       dst[i] = f(e)
+//       if f(slice[i]) {
+//         dst = append(dst, slice[i])
+//       }
 //     }
 //   }
 //   dst
 //
 func walkfilter(n *Node, init *Nodes) *Node {
+	// end-filter-header
 	source := n.Right
 	var l []*Node
 
 	// filter algorithm:
 	// func filter(f func(int) bool, s []int) []int {
-	//     filtered := make(int, 0, len(s))
+	//     filtered := make(int, 0))
 	//     for i := range s {
 	//         if f(s[i]) {
 	//             filtered = append(filtered, s[i])
@@ -3208,7 +3213,7 @@ func walkfilter(n *Node, init *Nodes) *Node {
 	makeType.Type = source.Type
 
 	makeDest := nod(OMAKE, nil, nil)
-	makeDest.List.Append(makeType, nodintconst(0), nod(OLEN, source, nil)) // make([]<T>, len(src))
+	makeDest.List.Append(makeType, nodintconst(0)) // make([]<T>, len(src))
 
 	// create the destination slice / map
 	filtered := temp(source.Type)
