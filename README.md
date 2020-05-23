@@ -1,4 +1,4 @@
-[![Build Status](https://xn--lm8h.ramonr.ch/api/badges/ramon/go/status.svg)](https://xn--lm8h.ramonr.ch/ramon/go)
+[![Build Status](https://xn--s68h.ramonr.ch/api/badges/ramon/go/status.svg)](https://xn--s68h.ramonr.ch/ramon/go)
 
 # The Go Programming Language
 
