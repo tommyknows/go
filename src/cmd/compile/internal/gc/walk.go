@@ -3200,7 +3200,7 @@ func walkfilter(n *Node, init *Nodes) *Node {
 
 	// filter algorithm:
 	// func filter(f func(int) bool, s []int) []int {
-	//     filtered := make(int, 0))
+	//     filtered := make([]int, 0))
 	//     for i := range s {
 	//         if f(s[i]) {
 	//             filtered = append(filtered, s[i])

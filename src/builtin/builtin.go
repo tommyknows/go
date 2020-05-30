@@ -135,22 +135,21 @@ func append(slice []Type, elems ...Type) []Type
 
 // begin-newbuiltins
 // The prepend built-in function prepends an element to the start of
-// the slice.  As slices do not have any capacity in the beginning,
-// this function always results in an expensive copy of the original
-// slice. Prepend returns the updated slice. It is therefore necessary
-// to store the result of prepend, often in the variable holding the
-// slice itself.
+// the slice. This function always returns a copy of the underlying
+// array, with the given element at the head of that array. It is
+// therefore necessary to store the result of prepend, often in the
+// variable holding the slice itself.
 func prepend(elem Type, slice []Type) []Type
 
 // The fmap built-in function maps a slice of elements from one type to
-// a slice of elements of another type, using the given function.
-// The returned slice always has the same number of elements as the
-// source slice.
+// a slice of elements of another type, using the given transformation
+// function. The returned slice always has the same number of elements
+// as the source slice.
 func fmap(fn func(Type) Type1, slice []Type) []Type1
 
 // The fold built-in functions fold over a slice of elements with the
-// given function. It takes init, the second argument, and the last
-// item of the list and applies the function, then it takes the
+// given function. It takes init, the second argument, and the first /
+// last item of the list and applies the function, then it takes the
 // penultimate item from the end and the result, and so on.
 // foldr and foldl differ in their evaluation order - foldr starts
 // at the last, foldl at the first element of the slice.
@@ -160,9 +159,6 @@ func foldl(fn func(Type1, Type) Type1, acc Type1, slice []Type) Type1
 // The filter built-in function filters a slice with the given
 // function. If the function returns true on an element, the
 // element will be added to the returned slice.
-// The returned slice will always have the same capacity as the
-// original slice, but the length will always be equal to the
-// number of elements that returned true in the filter function.
 func filter(fn func(Type) bool, slice []Type) []Type
 
 // end-newbuiltins
