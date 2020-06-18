@@ -3107,8 +3107,7 @@ func walkfmap(n *Node, init *Nodes) *Node {
 }
 
 // start-fold-header
-// walkfold rewrites the builtin fold function.
-// For the right fold:
+// walkfold rewrites the builtin fold function. For the right fold:
 //   foldr(f(T1, T2) T2, a T2, s []T1) T2
 //
 //     init {
